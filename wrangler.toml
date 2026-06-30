@@ -1,0 +1,17 @@
+# wrangler.toml
+# Cloudflare Worker configuration for Passport Threads
+
+name = "passport-threads-worker"
+main = "_workers/passport-worker.js"
+compatibility_date = "2023-05-18"
+
+[vars]
+# OPENROUTER_API_KEY should be set as a secret in the Cloudflare dashboard:
+# wrangler secret put OPENROUTER_API_KEY
+# ALLOWED_ORIGIN can be set here or as an environment variable
+ALLOWED_ORIGIN = "https://passport-threads.com"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "xxxxxxxxxxxx" # Replace with your real Cloudflare KV namespace ID
+preview_id = "xxxxxxxxxxxx" # Optional: Replace with your preview KV namespace ID

@@ -1,0 +1,327 @@
+/* assets/css/passport.css */
+/* Passport Card Cover & Data Page Styles (Reading Mode) */
+
+.passport-result-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-8);
+  margin-bottom: var(--space-8);
+  perspective: 1000px;
+}
+
+.passport-card {
+  width: 100%;
+  max-width: 440px;
+  background: #fdfbf7; /* Off-white, textured passport paper look */
+  border-radius: var(--radius-lg);
+  border: 1px solid #d4c5b3;
+  box-shadow: var(--shadow-passport);
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-5);
+  font-family: var(--font-body);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  transition: transform var(--transition-slow) ease;
+}
+
+/* Background SVGs for different regions */
+.passport-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.08; /* Subtle background pattern */
+  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+  z-index: var(--z-base);
+}
+
+.passport-card--americas::before      { background-image: url('../img/passport-bg/americas.svg'); }
+.passport-card--europe::before        { background-image: url('../img/passport-bg/europe.svg'); }
+.passport-card--eastasia::before      { background-image: url('../img/passport-bg/eastasia.svg'); }
+.passport-card--southeastasia::before { background-image: url('../img/passport-bg/southeastasia.svg'); }
+.passport-card--middleeast::before    { background-image: url('../img/passport-bg/middleeast.svg'); }
+.passport-card--default::before       { background-image: url('../img/passport-bg/default.svg'); }
+
+/* Header Elements */
+.pp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px double #d4c5b3;
+  padding-bottom: var(--space-3);
+  position: relative;
+  z-index: 2;
+}
+
+.pp-header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.pp-country-name {
+  font-family: var(--font-passport);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--color-primary);
+  line-height: 1.1;
+}
+
+.pp-doc-type {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--color-text-muted);
+}
+
+.pp-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pp-emblem {
+  font-size: 28px;
+}
+
+/* Identity Section */
+.pp-identity {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  position: relative;
+  z-index: 2;
+}
+
+.pp-photo-wrap {
+  width: 100px;
+  height: 100px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 4px solid white;
+  box-shadow: var(--shadow-sm);
+  background: #e2e8f0;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.pp-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pp-identity-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex-grow: 1;
+}
+
+/* Fields Styling */
+.pp-field {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid rgba(212, 197, 179, 0.5);
+  padding-bottom: 2px;
+}
+
+.pp-field-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.pp-field-value {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+#previewUsername, .pp-username {
+  font-family: var(--font-mono);
+  color: var(--color-accent);
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Threads Nation Badge (The Viral Element) */
+.pp-nation {
+  display: flex;
+  flex-direction: column;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  position: relative;
+  z-index: 2;
+}
+
+.pp-nation-value {
+  font-family: var(--font-passport);
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  color: var(--color-nation);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 2px;
+}
+
+/* 5 Personality Scores */
+.pp-scores {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  position: relative;
+  z-index: 2;
+}
+
+.pp-score-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.score-name {
+  width: 90px;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.score-track {
+  flex-grow: 1;
+  height: 8px;
+  background: #e2dcd3;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+}
+
+.score-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: var(--radius-full);
+  width: 0;
+  transition: width var(--transition-slow) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.score-num {
+  width: 30px;
+  text-align: right;
+  font-family: var(--font-mono);
+  color: var(--color-accent);
+}
+
+/* Visa Stamps Section */
+.pp-stamps-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  position: relative;
+  z-index: 2;
+}
+
+.pp-stamps-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.visa-stamp {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  border: 2px dashed var(--color-accent);
+  padding: 4px 8px;
+  border-radius: 4px;
+  transform: rotate(-3deg);
+  display: inline-block;
+  user-select: none;
+}
+
+.visa-stamp:nth-child(2) {
+  color: var(--color-nation);
+  border-color: var(--color-nation);
+  transform: rotate(2deg);
+}
+
+.visa-stamp:nth-child(3) {
+  color: var(--color-gold);
+  border-color: var(--color-gold);
+  transform: rotate(-1deg);
+}
+
+/* Passport Footer (MRZ line) */
+.pp-footer {
+  border-top: 1px dashed #d4c5b3;
+  padding-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+  z-index: 2;
+}
+
+.mrz-line {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+
+/* Action buttons below result section */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.action-buttons .btn {
+  box-shadow: var(--shadow-sm);
+}
+
+.action-buttons .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .desktop-only {
+    display: flex;
+  }
+}

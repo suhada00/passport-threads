@@ -1,0 +1,35 @@
+# passport-threads.com robots.txt
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /_workers/
+
+# Allow asset crawling for rich search engine result snippets
+Allow: /assets/img/og-image.png
+Allow: /assets/img/icons/
+
+# High-performance hosting - no crawl delay needed
+Crawl-delay: 0
+
+Sitemap: https://passport-threads.com/sitemap.xml
+
+# Social media crawler permissions
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# Google scrapers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Mediapartners-Google
+Allow: /

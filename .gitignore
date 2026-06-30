@@ -1,0 +1,15 @@
+# Local env files
+.dev.vars
+.env
+.env.local
+
+# IDE files
+.idea/
+.vscode/
+.gemini/
+antigravity-ide/
+
+# System logs & files
+*.log
+.DS_Store
+Thumbs.db

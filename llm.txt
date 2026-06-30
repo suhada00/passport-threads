@@ -1,0 +1,101 @@
+# Passport Threads - AI Threads Passport Generator
+
+A localized, PWA-enabled satirical identity document generator for Threads users. The website analyzes public Threads profile details and recent activity to generate a funny Threads Nation, custom satirical title, and personality metrics.
+
+## Architecture
+
+- **Frontend**: Vanilla HTML5, CSS (in `assets/css`), and JavaScript (in `assets/js`). 
+- **Offline / PWA**: Supported via `sw.js` and `manifest.json`.
+- **Localization**: Structured static directories for 18 languages in `/lang/[code]/index.html` (mapped in `sitemap.xml`).
+- **Backend / Workers**: A Cloudflare Pages Worker (`_workers/passport-worker.js`) handles rate limiting, scraping public profile details, and proxying requests to OpenRouter.
+- **Database / KV**: Cloudflare KV tracks the total passports issued and applies rate limits.
+- **AI Model**: OpenRouter `anthropic/claude-haiku-4.5` models the satirical passport attributes.
+
+## Key Files
+
+- `index.html`: Base entry point and language landing setup.
+- `assets/js/app.js`: Main state and flow coordinator.
+- `assets/js/share.js`: Custom Web Share and platform redirect generator.
+- `assets/js/passport-canvas.js`: HTML5 canvas rendering engine for image exports.
+- `_workers/passport-worker.js`: Production serverless worker.
+- `mock_server.py`: Local Python developer environment mock server.
+
+## API Endpoints
+
+The API is mounted on `/api/*` and supports CORS:
+
+### 1. `POST /api/preview`
+Fetches the basic public avatar and name of a user.
+- **Body**: `{ "username": "zuck" }`
+- **Response**:
+```json
+{
+  "success": true,
+  "preview": {
+    "username": "zuck",
+    "name": "Mark Zuckerberg",
+    "avatar": "https://www.threads.net/favicon.ico"
+  }
+}
+```
+
+### 2. `POST /api/generate`
+Scrapes posts and calls the OpenRouter AI gateway to generate a passport.
+- **Body**:
+```json
+{
+  "username": "zuck",
+  "lang": "en",
+  "manualBio": null
+}
+```
+*Note: If `manualBio` is supplied (string, min 15 chars), the system bypasses public scraping and analyzes the bio text directly.*
+- **Response**:
+```json
+{
+  "success": true,
+  "profile": {
+    "username": "zuck",
+    "name": "Mark Zuckerberg",
+    "avatar": "https://www.threads.net/favicon.ico",
+    "bio": "Co-founder of Threads",
+    "followerCount": "5M",
+    "recentPosts": ["Hello Threads!"],
+    "isManualMode": false
+  },
+  "passport": {
+    "title": "Chief Threads Officer",
+    "nation": "Kingdom of Meta Platforms",
+    "tagline": "Connecting the world, one thread at a time.",
+    "passportNumber": "PT9X8Y7Z6",
+    "scores": {
+      "chaotic": 45,
+      "wholesome": 70,
+      "dramatic": 30,
+      "intellectual": 85,
+      "authentic": 75
+    },
+    "stamps": [
+      "Meta Visionary",
+      "System Admin",
+      "Threads Pioneer"
+    ],
+    "bio_summary": "He literally owns the place. The AI is too scared to roast him."
+  },
+  "country": "US"
+}
+```
+
+### 3. `GET /api/stats`
+Gets total passports issued.
+- **Response**: `{ "total_passports": 1284 }`
+
+### 4. `GET /api/health`
+Health check.
+- **Response**: `{ "status": "ok", "version": "2.0" }`
+
+## Query Parameters
+- `?u=username`: Appending this to the homepage automatically triggers scraping and AI generation for that username on page load (e.g. `https://passport-threads.com/?u=zuck`).
+
+## Supported Languages (18)
+`en` (English), `fr` (French), `de` (German), `es` (Spanish), `pt` (Portuguese), `it` (Italian), `nl` (Dutch), `sv` (Swedish), `no` (Norwegian), `da` (Danish), `pl` (Polish), `tr` (Turkish), `ja` (Japanese), `ko` (Korean), `zh` (Chinese), `ar` (Arabic), `hi` (Hindi), `id` (Indonesian).

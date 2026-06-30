@@ -1,0 +1,89 @@
+/* assets/css/adsense.css */
+/* AdSense containers, placeholder heights, and label rules to prevent Cumulative Layout Shift (CLS) */
+
+.ad-wrap {
+  margin: var(--space-6) auto;
+  text-align: center;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.ad-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-light);
+  letter-spacing: 1px;
+  user-select: none;
+}
+
+/* Ad slots layouts to reserve container space */
+.adsbygoogle {
+  background-color: rgba(255, 255, 255, 0.5);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  display: block;
+}
+
+/* Leaderboard Hero Bottom Ad */
+.ad-wrap--hero {
+  max-width: 728px;
+  min-height: 114px; /* Label + 90px ad + spacing */
+}
+
+.ad-wrap--hero .adsbygoogle {
+  min-height: 90px;
+}
+
+/* Square/Rectangle result-top Ad */
+.ad-wrap--result-top {
+  max-width: 336px;
+  min-height: 300px;
+}
+
+.ad-wrap--result-top .adsbygoogle {
+  width: 300px;
+  height: 250px;
+  margin: 0 auto;
+}
+
+/* Leaderboard result-bottom Ad */
+.ad-wrap--result-bottom {
+  max-width: 728px;
+  min-height: 114px;
+}
+
+.ad-wrap--result-bottom .adsbygoogle {
+  min-height: 90px;
+}
+
+/* Contextual fluid In-Article Ad */
+.ad-wrap--incontent {
+  max-width: 728px;
+  margin: var(--space-10) auto;
+  min-height: 140px;
+}
+
+/* Hide empty ads when they fail to load */
+ins.adsbygoogle[data-ad-status="unfilled"] {
+  display: none !important;
+}
+
+/* Mobile responsive ad containers override */
+@media (max-width: 768px) {
+  .ad-wrap--hero {
+    min-height: 74px;
+  }
+  .ad-wrap--hero .adsbygoogle {
+    min-height: 50px;
+  }
+  .ad-wrap--result-bottom {
+    min-height: 74px;
+  }
+  .ad-wrap--result-bottom .adsbygoogle {
+    min-height: 50px;
+  }
+}
