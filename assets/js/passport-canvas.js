@@ -235,13 +235,41 @@ class PassportCanvas {
       healing: '🌿'
     };
 
+    const metricTranslations = {
+      en: {
+        asbun: 'Yapping',
+        sinis: 'Sarcastic',
+        wholesome: 'Wholesome',
+        chaos: 'Chaos',
+        baper: 'Sensitive',
+        receh: 'Silly/Corny',
+        halu: 'Delusional',
+        fomo: 'FOMO',
+        caper: 'Clout Chasing',
+        healing: 'Vibing'
+      },
+      id: {
+        asbun: 'Asbun',
+        sinis: 'Sinis',
+        wholesome: 'Wholesome',
+        chaos: 'Chaos',
+        baper: 'Baper',
+        receh: 'Receh',
+        halu: 'Halu',
+        fomo: 'FOMO',
+        caper: 'Caper',
+        healing: 'Healing'
+      }
+    };
+    const langMetrics = metricTranslations[activeLang] || metricTranslations.en;
+
     scoreKeys.forEach((key, idx) => {
       const col = Math.floor(idx / 5);
       const rowIdx = idx % 5;
       const rowY = scoresY + 14 + (rowIdx * (h * 0.038));
       const val = scores[key];
       const emoji = scoreEmojis[key] || '📊';
-      const scoreLabel = key.charAt(0).toUpperCase() + key.slice(1);
+      const scoreLabel = langMetrics[key] || (key.charAt(0).toUpperCase() + key.slice(1));
 
       // Resolve Column X coordinates
       let labelX, trackX, trackW, numX;

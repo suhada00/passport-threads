@@ -451,9 +451,11 @@
         <a href="/legal/privacy-policy.html"    data-i18n="nav.privacy">Privacy</a>
         <a href="/legal/terms-of-service.html"  data-i18n="nav.terms">Terms</a>
         <a href="/legal/cookie-policy.html"     data-i18n="nav.cookies">Cookies</a>
+        <a href="#" id="aboutBtn"               data-i18n="nav.about">About</a>
+        <a href="#" id="contactBtn"             data-i18n="nav.contact">Contact</a>
       </nav>
       <p class="footer-copy">
-        © 2025 Passport Threads · Not affiliated with Meta or Threads ·
+        © 2026 Passport Threads · Not affiliated with Meta or Threads ·
         <span data-i18n="footer.disclaimer">For entertainment purposes only</span>
       </p>
     </div>
@@ -532,20 +534,65 @@
     </div>
   </div>
 
+  <!-- ABOUT MODAL -->
+  <div id="aboutModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="aboutModalTitle" hidden>
+    <div class="modal-backdrop" id="aboutBackdrop" tabindex="-1"></div>
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2 id="aboutModalTitle" data-i18n="about.title">About Passport Threads</h2>
+        <button class="modal-close" id="aboutClose" aria-label="Close">
+          <span aria-hidden="true">✕</span>
+        </button>
+      </div>
+      <p class="modal-subtitle" style="font-weight: 500; font-size: 15px; line-height: 1.6; color: var(--color-text-muted);" data-i18n="about.content">
+        Passport Threads is a fun, satirical profiling tool that analyzes public Meta Threads profiles. Using AI analysis, we generate a humorous identity passport detailing your 'Threads Nation', a custom title, and funny personality scores. This site is created for entertainment purposes only and is not affiliated with Meta or Threads. We do not store any of your personal details or profile metadata.
+      </p>
+    </div>
+  </div>
+
+  <!-- CONTACT MODAL -->
+  <div id="contactModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle" hidden>
+    <div class="modal-backdrop" id="contactBackdrop" tabindex="-1"></div>
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2 id="contactModalTitle" data-i18n="contact.title">Contact Us</h2>
+        <button class="modal-close" id="contactClose" aria-label="Close">
+          <span aria-hidden="true">✕</span>
+        </button>
+      </div>
+      <p class="modal-subtitle" style="font-weight: 500; font-size: 15px; line-height: 1.6; color: var(--color-text-muted);" data-i18n="contact.content">
+        Have questions, suggestions, or just want to send feedback? We would love to hear from you!<br><br>Email: contact@threadspassport.fun
+      </p>
+    </div>
+  </div>
+
+  <!-- COOKIE CONSENT BANNER -->
+  <div id="cookieBanner" class="cookie-banner" hidden>
+    <div class="cookie-content">
+      <span class="cookie-icon" aria-hidden="true">🍪</span>
+      <p class="cookie-text" data-i18n="cookie.banner.text">
+        We use cookies to personalize content, ads, and analyze traffic for Google AdSense.
+      </p>
+      <div class="cookie-actions">
+        <button id="acceptCookiesBtn" class="cookie-btn" data-i18n="cookie.banner.accept">Accept</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
   <!-- SCRIPTS -->
-  <script src="/assets/js/i18n.js"            defer></script>
-  <script src="/assets/js/geo.js"             defer></script>
-  <script src="/assets/js/counter.js"         defer></script>
-  <script src="/assets/js/preview.js"         defer></script>
-  <script src="/assets/js/manual-mode.js"     defer></script>
-  <script src="/assets/js/passport-render.js" defer></script>
-  <script src="/assets/js/passport-canvas.js" defer></script>
-  <script src="/assets/js/share.js"           defer></script>
-  <script src="/assets/js/adsense.js"         defer></script>
-  <script src="/assets/js/app.js"             defer></script>
+  <script src="/assets/js/i18n.js?v=1.0.1"            defer></script>
+  <script src="/assets/js/geo.js?v=1.0.1"             defer></script>
+  <script src="/assets/js/counter.js?v=1.0.1"         defer></script>
+  <script src="/assets/js/preview.js?v=1.0.1"         defer></script>
+  <script src="/assets/js/manual-mode.js?v=1.0.1"     defer></script>
+  <script src="/assets/js/passport-render.js?v=1.0.1" defer></script>
+  <script src="/assets/js/passport-canvas.js?v=1.0.1" defer></script>
+  <script src="/assets/js/share.js?v=1.0.1"           defer></script>
+  <script src="/assets/js/adsense.js?v=1.0.1"         defer></script>
+  <script src="/assets/js/app.js?v=1.0.1"             defer></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));

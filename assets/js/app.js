@@ -48,6 +48,21 @@ class App {
     this.modalClose = document.getElementById('modalClose');
     this.modalBackdrop = document.getElementById('modalBackdrop');
     
+    // New Modals (About & Contact)
+    this.aboutModal = document.getElementById('aboutModal');
+    this.aboutBtn = document.getElementById('aboutBtn');
+    this.aboutClose = document.getElementById('aboutClose');
+    this.aboutBackdrop = document.getElementById('aboutBackdrop');
+    
+    this.contactModal = document.getElementById('contactModal');
+    this.contactBtn = document.getElementById('contactBtn');
+    this.contactClose = document.getElementById('contactClose');
+    this.contactBackdrop = document.getElementById('contactBackdrop');
+    
+    // Cookie Banner
+    this.cookieBanner = document.getElementById('cookieBanner');
+    this.acceptCookiesBtn = document.getElementById('acceptCookiesBtn');
+    
     // State Values
     this.currentPassportData = null;
     this.activeUsername = '';
@@ -171,6 +186,67 @@ class App {
 
     const mobileBtnNew = document.getElementById('mobileBtnNew');
     if (mobileBtnNew) mobileBtnNew.addEventListener('click', () => this.resetToIdle());
+
+    // About Modal Event Listeners
+    if (this.aboutBtn) {
+      this.aboutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (this.aboutModal) this.aboutModal.hidden = false;
+      });
+    }
+    if (this.aboutClose) {
+      this.aboutClose.addEventListener('click', () => {
+        if (this.aboutModal) this.aboutModal.hidden = true;
+      });
+    }
+    if (this.aboutBackdrop) {
+      this.aboutBackdrop.addEventListener('click', () => {
+        if (this.aboutModal) this.aboutModal.hidden = true;
+      });
+    }
+
+    // Contact Modal Event Listeners
+    if (this.contactBtn) {
+      this.contactBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (this.contactModal) this.contactModal.hidden = false;
+      });
+    }
+    if (this.contactClose) {
+      this.contactClose.addEventListener('click', () => {
+        if (this.contactModal) this.contactModal.hidden = true;
+      });
+    }
+    if (this.contactBackdrop) {
+      this.contactBackdrop.addEventListener('click', () => {
+        if (this.contactModal) this.contactModal.hidden = true;
+      });
+    }
+
+    // Cookie Banner Event Listeners & Check
+    if (this.cookieBanner) {
+      let consent = null;
+      try {
+        consent = localStorage.getItem('cookie_consent');
+      } catch (err) {
+        console.warn('localStorage is disabled or not accessible:', err);
+      }
+      if (!consent) {
+        setTimeout(() => {
+          if (this.cookieBanner) this.cookieBanner.hidden = false;
+        }, 1500);
+      }
+    }
+    if (this.acceptCookiesBtn) {
+      this.acceptCookiesBtn.addEventListener('click', () => {
+        try {
+          localStorage.setItem('cookie_consent', 'accepted');
+        } catch (err) {
+          console.warn('Unable to save cookie consent to localStorage:', err);
+        }
+        if (this.cookieBanner) this.cookieBanner.hidden = true;
+      });
+    }
   }
 
   // Check URL parameters for direct passport links (?u=username)

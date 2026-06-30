@@ -1,0 +1,11 @@
+services:
+  passport-threads:
+    build: .
+    container_name: passport-threads_app
+    ports:
+      - "8081:8081"
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data

@@ -54,13 +54,41 @@ class PassportRender {
       healing: '🌿'
     };
 
+    const metricTranslations = {
+      en: {
+        asbun: 'Yapping',
+        sinis: 'Sarcastic',
+        wholesome: 'Wholesome',
+        chaos: 'Chaos',
+        baper: 'Sensitive',
+        receh: 'Silly/Corny',
+        halu: 'Delusional',
+        fomo: 'FOMO',
+        caper: 'Clout Chasing',
+        healing: 'Vibing'
+      },
+      id: {
+        asbun: 'Asbun',
+        sinis: 'Sinis',
+        wholesome: 'Wholesome',
+        chaos: 'Chaos',
+        baper: 'Baper',
+        receh: 'Receh',
+        halu: 'Halu',
+        fomo: 'FOMO',
+        caper: 'Caper',
+        healing: 'Healing'
+      }
+    };
+    const langMetrics = metricTranslations[activeLang] || metricTranslations.en;
+
     const scoresHtml = Object.keys(scores).map(key => {
       const val = scores[key];
       const emoji = scoreEmojis[key] || '📊';
-      const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1);
+      const label = langMetrics[key] || (key.charAt(0).toUpperCase() + key.slice(1));
       return `
         <div class="score-row">
-          <span class="score-name">${emoji} ${capitalizedKey}</span>
+          <span class="score-name">${emoji} ${label}</span>
           <div class="score-track">
             <div class="score-bar" style="width: ${val}%;"></div>
           </div>
