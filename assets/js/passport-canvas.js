@@ -47,7 +47,7 @@ class PassportCanvas {
         ctx.font = 'bold 16px monospace';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
         ctx.textAlign = 'right';
-        ctx.fillText('passport-threads.com 🛂', width - 40, height - 30);
+        ctx.fillText('threadspassport.fun 🛂', width - 40, height - 30);
 
         // Resolve canvas to Blob
         canvas.toBlob((blob) => {
@@ -379,7 +379,7 @@ class PassportCanvas {
     // Branding Domain CTA
     ctx.fillStyle = '#e94560';
     ctx.font = 'bold 18px monospace';
-    ctx.fillText('passport-threads.com 🛂', x, y + 490);
+    ctx.fillText('threadspassport.fun 🛂', x, y + 490);
 
     ctx.restore();
   }

@@ -1,4 +1,4 @@
-# passport-threads.com robots.txt
+# threadspassport.fun robots.txt
 
 User-agent: *
 Allow: /
@@ -12,7 +12,7 @@ Allow: /assets/img/icons/
 # High-performance hosting - no crawl delay needed
 Crawl-delay: 0
 
-Sitemap: https://passport-threads.com/sitemap.xml
+Sitemap: https://threadspassport.fun/sitemap.xml
 
 # Social media crawler permissions
 User-agent: Twitterbot

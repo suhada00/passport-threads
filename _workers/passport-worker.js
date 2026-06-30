@@ -3,7 +3,7 @@
 
 const CORS_HEADERS = (origin) => {
   const allowed = [
-    'https://passport-threads.com',
+    'https://threadspassport.fun',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     'http://localhost:8001',
@@ -13,7 +13,7 @@ const CORS_HEADERS = (origin) => {
     'http://localhost:3000',
     'http://127.0.0.1:3000'
   ];
-  const resOrigin = allowed.includes(origin) ? origin : 'https://passport-threads.com';
+  const resOrigin = allowed.includes(origin) ? origin : 'https://threadspassport.fun';
   return {
     'Access-Control-Allow-Origin': resOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -476,7 +476,7 @@ async function generatePassportWithAI(profile, lang, country, apiKey) {
       headers: {
         'Authorization':  `Bearer ${apiKey}`,
         'Content-Type':   'application/json',
-        'HTTP-Referer':   'https://passport-threads.com',
+        'HTTP-Referer':   'https://threadspassport.fun',
         'X-Title':        'Passport Threads v2'
       },
       body: JSON.stringify({

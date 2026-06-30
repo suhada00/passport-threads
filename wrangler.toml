@@ -9,7 +9,7 @@ compatibility_date = "2023-05-18"
 # OPENROUTER_API_KEY should be set as a secret in the Cloudflare dashboard:
 # wrangler secret put OPENROUTER_API_KEY
 # ALLOWED_ORIGIN can be set here or as an environment variable
-ALLOWED_ORIGIN = "https://passport-threads.com"
+ALLOWED_ORIGIN = "https://threadspassport.fun"
 
 [[kv_namespaces]]
 binding = "KV"

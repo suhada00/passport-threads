@@ -95,7 +95,7 @@ Health check.
 - **Response**: `{ "status": "ok", "version": "2.0" }`
 
 ## Query Parameters
-- `?u=username`: Appending this to the homepage automatically triggers scraping and AI generation for that username on page load (e.g. `https://passport-threads.com/?u=zuck`).
+- `?u=username`: Appending this to the homepage automatically triggers scraping and AI generation for that username on page load (e.g. `https://threadspassport.fun/?u=zuck`).
 
 ## Supported Languages (18)
 `en` (English), `fr` (French), `de` (German), `es` (Spanish), `pt` (Portuguese), `it` (Italian), `nl` (Dutch), `sv` (Swedish), `no` (Norwegian), `da` (Danish), `pl` (Polish), `tr` (Turkish), `ja` (Japanese), `ko` (Korean), `zh` (Chinese), `ar` (Arabic), `hi` (Hindi), `id` (Indonesian).
