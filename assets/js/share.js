@@ -12,7 +12,7 @@ const SHARE_TEXTS = {
   en: {
     mobileText: (title, nation) => `I'm a "${title}" from the ${nation}! Discover yours 👇`,
     twitterText: (title, nation, tagline) => `Just got my Threads Passport! 🛂\n\nI'm from the "${nation}"\nTitle: "${title}"\n\n"${tagline}"\n\nGet yours 👇`,
-    threadsText: (title, nation) => `Just got my Threads Passport! 🛂\n\nI'm from the "${nation}"\nTitle: "${title}"\n\n→ `,
+    threadsText: (title, nation, tagline, stamp, url) => `🚀 Found my official title on Threads: ${title}!\nNation: ${nation} • Badge: ${stamp}\n"${tagline}"\n\nCurious about your title? Create your Threads Passport now, free & just needs a username 👇\n${url}\n\n#ThreadsPassport #ThreadsAI`,
     whatsappText: (title, nation) => `I just got my Threads Passport! 🛂\n\nI'm from the "${nation}"\nMy title: "${title}"\n\nFind out yours: `,
     toastPreparing: 'Preparing share card... ⏳',
     toastTwitter: 'Generating X/Twitter image... 🐦',
@@ -30,7 +30,7 @@ const SHARE_TEXTS = {
   id: {
     mobileText: (title, nation) => `Saya seorang "${title}" dari ${nation}! Temukan paspormu 👇`,
     twitterText: (title, nation, tagline) => `Baru dapat Paspor Threads saya! 🛂\n\nSaya dari "${nation}"\nJabatan: "${title}"\n\n"${tagline}"\n\nBuat paspormu di sini 👇`,
-    threadsText: (title, nation) => `Baru dapat Paspor Threads saya! 🛂\n\nSaya dari "${nation}"\nJabatan: "${title}"\n\n→ `,
+    threadsText: (title, nation, tagline, stamp, url) => `🚀 Ternyata jabatan resmiku di Threads: ${title}!\nNegara: ${nation} • Lencana: ${stamp}\n"${tagline}"\n\nPenasaran kamu dapet jabatan apa? Bikin Paspor Threads-mu sendiri sekarang, gratis & cuma butuh username 👇\n${url}\n\n#PasporThreads #ThreadsAI`,
     whatsappText: (title, nation) => `Saya baru saja membuat Paspor Threads! 🛂\n\nSaya dari "${nation}"\nJabatan saya: "${title}"\n\nCek punya kamu di sini: `,
     toastPreparing: 'Menyiapkan kartu paspor... ⏳',
     toastTwitter: 'Membuat gambar X/Twitter... 🐦',
@@ -140,8 +140,11 @@ async function shareToThreads(data) {
     const img  = await renderPassportToBlob('threads', data);
     triggerDownload(img, 'threads-passport.png');
     
+    const url = `${window.location.origin}?u=${encodeURIComponent(data.profile.username)}`;
+    const stamp = (data.passport.stamps && data.passport.stamps.length > 0) ? data.passport.stamps[0] : 'Chronically Online';
+    
     const text = encodeURIComponent(
-      dict.threadsText(data.passport.title, data.passport.nation) + `${window.location.origin}?u=${encodeURIComponent(data.profile.username)}`
+      dict.threadsText(data.passport.title, data.passport.nation, data.passport.tagline, stamp, url)
     );
     window.open(`https://www.threads.net/intent/post?text=${text}`, '_blank', 'noopener');
     showToast(dict.toastThreadsDone);
