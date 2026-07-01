@@ -22,7 +22,7 @@ COPY index.html ./public/index.html
 COPY 404.html ./public/404.html
 COPY manifest.json ./public/manifest.json
 COPY robots.txt ./public/robots.txt
-COPY sitemap.xml ./public/sitemap.xml
+COPY sitemap*.xml ./public/
 COPY sw.js ./public/sw.js
 
 # Expose port

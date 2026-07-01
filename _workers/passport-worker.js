@@ -66,7 +66,11 @@ export default {
           return respond({ status: 'ok', version: '2.0' });
 
         default:
-          return respond({ error: 'Not found' }, 404);
+          // Fallback to serving static assets (Cloudflare Pages) or proxying to the origin (Cloudflare Workers)
+          if (env && env.ASSETS && typeof env.ASSETS.fetch === 'function') {
+            return await env.ASSETS.fetch(request);
+          }
+          return await fetch(request);
       }
     } catch (err) {
       console.error('Worker error:', err);
