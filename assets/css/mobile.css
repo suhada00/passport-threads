@@ -165,6 +165,19 @@
   .score-name {
     width: 75px;
   }
+
+  /* Mobile Navigation Header Improvements */
+  .nav-link {
+    display: none !important;
+  }
+
+  .logo {
+    font-size: var(--font-size-lg);
+  }
+
+  .header {
+    height: 60px;
+  }
 }
 
 /* Animations */
