@@ -318,6 +318,39 @@ class MockHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 fallback_svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#7c3aed"/><text x="50" y="55" font-size="30" font-family="sans-serif" text-anchor="middle" fill="#ffffff">👤</text></svg>'
                 self.wfile.write(fallback_svg.encode('utf-8'))
+        elif self.path.startswith('/api/download-video'):
+            parsed_path = urlparse(self.path)
+            params = parse_qs(parsed_path.query)
+            target_url = params.get('url', [None])[0]
+            
+            if not target_url:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "URL parameter required"}).encode('utf-8'))
+                return
+                
+            try:
+                import urllib.request
+                req = urllib.request.Request(target_url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    video_data = response.read()
+                    
+                self.send_response(200)
+                self.send_header('Content-Type', 'video/mp4')
+                self.send_header('Content-Disposition', 'attachment; filename="threads-video.mp4"')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.send_header('Cache-Control', 'public, max-age=86400')
+                self.end_headers()
+                self.wfile.write(video_data)
+            except Exception as e:
+                # Return dummy video response if offline / failed
+                self.send_response(200)
+                self.send_header('Content-Type', 'video/mp4')
+                self.send_header('Content-Disposition', 'attachment; filename="threads-video-mock.mp4"')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(b"MOCK_VIDEO_DATA")
         else:
             super().do_GET()
 
@@ -380,6 +413,23 @@ class MockHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             response = generate_mock_passport(username, lang, manual_bio)
+            self.wfile.write(json.dumps(response).encode('utf-8'))
+            
+        elif self.path == '/api/fetch-video':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            
+            response = {
+                "success": True,
+                "videoUrl": "https://video.cdninstagram.com/mock_video_hd.mp4",
+                "videoUrlHD": "https://video.cdninstagram.com/mock_video_hd.mp4",
+                "videoUrlSD": "https://video.cdninstagram.com/mock_video_sd.mp4",
+                "thumbnailUrl": "https://scontent.cdninstagram.com/mock_image.jpg",
+                "caption": "This is a mock Threads post with video download capability!",
+                "author": "Mock Threads Creator"
+            }
             self.wfile.write(json.dumps(response).encode('utf-8'))
             
         else:

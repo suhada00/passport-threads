@@ -63,8 +63,28 @@ class App {
     this.cookieBanner = document.getElementById('cookieBanner');
     this.acceptCookiesBtn = document.getElementById('acceptCookiesBtn');
     
+    // Downloader DOM Elements
+    this.navHome = document.getElementById('navHome');
+    this.navDownloader = document.getElementById('navDownloader');
+    this.downloaderSection = document.getElementById('downloaderSection');
+    
+    this.videoUrlInput = document.getElementById('videoUrlInput');
+    this.fetchVideoBtn = document.getElementById('fetchVideoBtn');
+    this.downloaderLoading = document.getElementById('downloaderLoading');
+    this.downloaderResult = document.getElementById('downloaderResult');
+    this.downloaderError = document.getElementById('downloaderError');
+    
+    this.dlVideoPlayer = document.getElementById('dlVideoPlayer');
+    this.dlVideoSource = document.getElementById('dlVideoSource');
+    this.dlAuthorName = document.getElementById('dlAuthorName');
+    this.dlCaptionText = document.getElementById('dlCaptionText');
+    this.dlDownloadBtn = document.getElementById('dlDownloadBtn');
+    this.dlNewBtn = document.getElementById('dlNewBtn');
+    this.dlQualitySelect = document.getElementById('dlQualitySelect');
+    
     // State Values
     this.currentPassportData = null;
+    this.currentVideoData = null;
     this.activeUsername = '';
 
     this.setupListeners();
@@ -169,9 +189,7 @@ class App {
     const mobileBtnShare = document.getElementById('mobileBtnShare');
     if (mobileBtnShare) {
       mobileBtnShare.addEventListener('click', () => {
-        if (this.currentPassportData) {
-          window.PT_Share.handleShare('share', this.currentPassportData);
-        }
+        this.showShareModal(true);
       });
     }
 
@@ -245,6 +263,101 @@ class App {
           console.warn('Unable to save cookie consent to localStorage:', err);
         }
         if (this.cookieBanner) this.cookieBanner.hidden = true;
+      });
+    }
+
+    // Downloader Navigation Tab Listeners
+    if (this.navHome) {
+      this.navHome.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.switchView('passport');
+      });
+    }
+    if (this.navDownloader) {
+      this.navDownloader.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.switchView('downloader');
+      });
+    }
+
+    // Downloader Input Event Listener
+    if (this.videoUrlInput) {
+      this.videoUrlInput.addEventListener('input', () => {
+        const val = this.videoUrlInput.value.trim();
+        const isValid = val.includes('threads.net');
+        if (this.fetchVideoBtn) this.fetchVideoBtn.disabled = !isValid;
+        if (this.downloaderError) this.downloaderError.setAttribute('hidden', '');
+      });
+
+      this.videoUrlInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && this.fetchVideoBtn && !this.fetchVideoBtn.disabled) {
+          this.startVideoFetchFlow();
+        }
+      });
+    }
+
+    // Downloader Fetch Button Event Listener
+    if (this.fetchVideoBtn) {
+      this.fetchVideoBtn.addEventListener('click', () => {
+        this.startVideoFetchFlow();
+      });
+    }
+
+    // Downloader Reset/New Button Event Listener
+    if (this.dlNewBtn) {
+      this.dlNewBtn.addEventListener('click', () => {
+        if (this.videoUrlInput) this.videoUrlInput.value = '';
+        if (this.fetchVideoBtn) this.fetchVideoBtn.disabled = true;
+        if (this.downloaderResult) this.downloaderResult.setAttribute('hidden', '');
+        if (this.downloaderError) this.downloaderError.setAttribute('hidden', '');
+        if (this.dlVideoPlayer) {
+          this.dlVideoPlayer.pause();
+          if (this.dlVideoSource) this.dlVideoSource.src = '';
+        }
+      });
+    }
+
+    // Downloader Download Button Event Listener
+    if (this.dlDownloadBtn) {
+      this.dlDownloadBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (!this.currentVideoData) return;
+        
+        const quality = this.dlQualitySelect ? this.dlQualitySelect.value : 'hd';
+        const videoUrl = quality === 'sd' ? this.currentVideoData.videoUrlSD : this.currentVideoData.videoUrlHD;
+        const downloadUrl = this.getEndpoint(`/api/download-video?url=${encodeURIComponent(videoUrl)}`);
+        
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        
+        if (isIOS && navigator.share) {
+          try {
+            window.PT_Share.showToast('Menyiapkan video untuk iOS... ⏳', 5000);
+            const res = await fetch(downloadUrl);
+            if (!res.ok) throw new Error('Gagal mengambil file video.');
+            const blob = await res.blob();
+            const file = new File([blob], 'threads-video.mp4', { type: 'video/mp4' });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: 'Threads Video'
+              });
+            } else {
+              window.open(downloadUrl, '_blank');
+            }
+          } catch (err) {
+            console.error('Web Share failed, opening URL instead:', err);
+            window.open(downloadUrl, '_blank');
+          }
+        } else {
+          // Android/Desktop standard file download
+          const a = document.createElement('a');
+          a.href = downloadUrl;
+          a.download = `threads-video-${Date.now()}.mp4`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
       });
     }
   }
@@ -414,7 +527,33 @@ class App {
 
       // Play Confetti
       this.launchConfetti();
+
+      // Render and upload passport image in the background for dynamic Open Graph card preview
+      this.uploadPassportImage(data);
     }, 400);
+  }
+
+  async uploadPassportImage(data) {
+    try {
+      if (!window.PT_Share || !window.PT_Share.renderPassportToBlob) return;
+      const blob = await window.PT_Share.renderPassportToBlob('threads', data);
+      
+      const res = await fetch('/api/upload-passport', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'image/png',
+          'x-username': data.profile.username
+        },
+        body: blob
+      });
+      if (res.ok) {
+        console.log('Passport image uploaded successfully for dynamic OG preview.');
+      } else {
+        console.warn('Failed to upload passport image for dynamic OG preview.');
+      }
+    } catch (err) {
+      console.warn('Error uploading passport image:', err);
+    }
   }
 
   triggerManualMode() {
@@ -520,6 +659,77 @@ class App {
     setTimeout(() => {
       wrap.innerHTML = '';
     }, 3500);
+  }
+
+  // ── Video Downloader Controller Helper Methods ──
+  switchView(viewName) {
+    if (viewName === 'downloader') {
+      if (this.navHome) this.navHome.classList.remove('nav-link--active');
+      if (this.navDownloader) this.navDownloader.classList.add('nav-link--active');
+      
+      if (this.heroSection) this.heroSection.setAttribute('hidden', '');
+      if (this.loadingSection) this.loadingSection.setAttribute('hidden', '');
+      if (this.manualSection) this.manualSection.setAttribute('hidden', '');
+      if (this.resultSection) this.resultSection.setAttribute('hidden', '');
+      if (this.mobileCTA) this.mobileCTA.style.display = 'none';
+      if (this.mobileBar) this.mobileBar.setAttribute('hidden', '');
+      
+      if (this.downloaderSection) this.downloaderSection.removeAttribute('hidden');
+    } else {
+      if (this.navHome) this.navHome.classList.add('nav-link--active');
+      if (this.navDownloader) this.navDownloader.classList.remove('nav-link--active');
+      
+      if (this.downloaderSection) this.downloaderSection.setAttribute('hidden', '');
+      
+      this.resetToIdle();
+    }
+  }
+
+  async startVideoFetchFlow() {
+    const url = this.videoUrlInput.value.trim();
+    if (!url) return;
+
+    if (this.downloaderLoading) this.downloaderLoading.removeAttribute('hidden');
+    if (this.downloaderResult) this.downloaderResult.setAttribute('hidden', '');
+    if (this.downloaderError) this.downloaderError.setAttribute('hidden', '');
+    if (this.fetchVideoBtn) this.fetchVideoBtn.disabled = true;
+
+    try {
+      const res = await fetch(this.getEndpoint('/api/fetch-video'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        this.currentVideoData = data;
+        
+        if (this.dlVideoPlayer && this.dlVideoSource) {
+          const proxiedDownloadUrl = this.getEndpoint(`/api/download-video?url=${encodeURIComponent(data.videoUrlHD)}`);
+          
+          this.dlVideoSource.src = proxiedDownloadUrl;
+          this.dlVideoPlayer.load();
+        }
+        
+        if (this.dlAuthorName) this.dlAuthorName.textContent = data.author || 'Threads User';
+        if (this.dlCaptionText) this.dlCaptionText.textContent = data.caption || '';
+        
+        if (this.downloaderResult) this.downloaderResult.removeAttribute('hidden');
+      } else {
+        throw new Error(data.error || 'Failed to retrieve video details.');
+      }
+    } catch (err) {
+      console.error(err);
+      if (this.downloaderError) {
+        this.downloaderError.textContent = err.message || 'An error occurred. Please check the URL and try again.';
+        this.downloaderError.removeAttribute('hidden');
+      }
+    } finally {
+      if (this.downloaderLoading) this.downloaderLoading.setAttribute('hidden', '');
+      if (this.fetchVideoBtn) this.fetchVideoBtn.disabled = false;
+    }
   }
 }
 

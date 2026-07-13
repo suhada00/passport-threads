@@ -22,6 +22,8 @@ COPY index.html ./public/index.html
 COPY 404.html ./public/404.html
 COPY manifest.json ./public/manifest.json
 COPY robots.txt ./public/robots.txt
+COPY ads.txt ./public/ads.txt
+COPY llm*.txt ./public/
 COPY sitemap*.xml ./public/
 COPY sw.js ./public/sw.js
 

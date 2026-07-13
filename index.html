@@ -82,20 +82,24 @@
   <!-- FAVICON -->
   <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
 
-  <!-- FONTS -->
+  <!-- PRECONNECTIONS -->
+  <link rel="preconnect" href="https://ipapi.co">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+
+  <!-- FONTS (ASYNC FOR PERFORMANCE) -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet"></noscript>
 
   <!-- STYLES -->
   <link rel="stylesheet" href="/assets/css/main.css">
-  <link rel="stylesheet" href="/assets/css/passport.css">
-  <link rel="stylesheet" href="/assets/css/loading.css">
   <link rel="stylesheet" href="/assets/css/mobile.css">
-  <link rel="stylesheet" href="/assets/css/adsense.css">
+  <link rel="stylesheet" href="/assets/css/passport.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="/assets/css/loading.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="/assets/css/adsense.css" media="print" onload="this.media='all'">
 
   <!-- ADSENSE -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  <script data-src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" class="adsense-lazy" crossorigin="anonymous"></script>
 </head>
 
 <body class="state-idle">
@@ -110,7 +114,8 @@
         <span class="logo-text">Passport Threads</span>
       </a>
       <div class="nav-right">
-        <a href="/" class="nav-link" data-i18n="nav.home">Home</a>
+        <a href="/" class="nav-link nav-link--active" id="navHome" data-i18n="nav.home">Home</a>
+        <a href="#" class="nav-link" id="navDownloader" data-i18n="nav.downloader">Video Downloader</a>
         <a href="/blog/" class="nav-link" data-i18n="nav.blog">Blog</a>
         <button class="lang-btn" id="langBtn" aria-expanded="false" aria-haspopup="listbox">
           <span aria-hidden="true">🌐</span>
@@ -345,6 +350,126 @@
       </div>
     </section>
 
+    <!-- DOWNLOADER SECTION -->
+    <section id="downloaderSection" class="downloader-section" hidden aria-label="Threads Video Downloader">
+      <div class="container downloader-inner">
+        <div class="downloader-header">
+          <div class="downloader-badge" data-i18n="downloader.badge">🎥 HD Quality · Fast · Unlimited</div>
+          <h2 class="downloader-title" data-i18n="downloader.title">Threads Video Downloader</h2>
+          <p class="downloader-subtitle" data-i18n="downloader.subtitle">
+            Paste the Threads post link below to download your favorite videos directly to your device.
+          </p>
+        </div>
+
+        <!-- INPUT FORM -->
+        <div class="downloader-input-section">
+          <div class="downloader-input-row">
+            <div class="downloader-input-wrapper">
+              <span class="downloader-input-icon" aria-hidden="true">🔗</span>
+              <input
+                type="text"
+                id="videoUrlInput"
+                class="input-url"
+                placeholder="Tautan Utas"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="none"
+                spellcheck="false"
+                aria-label="Tautan Utas"
+              >
+              <button class="btn btn--primary btn--fetch-video" id="fetchVideoBtn" disabled>
+                <span data-i18n="downloader.cta">Muat Video</span>
+                <span aria-hidden="true">🚀</span>
+              </button>
+            </div>
+          </div>
+          <p class="downloader-input-help" data-i18n="downloader.inputHelp">
+            Works with any public Threads post containing a video.
+          </p>
+          <div id="downloaderError" class="input-error" role="alert" aria-live="assertive" hidden></div>
+        </div>
+
+        <!-- LOADING STATE -->
+        <div id="downloaderLoading" class="downloader-loading" hidden>
+          <div class="dl-spinner"></div>
+          <p data-i18n="downloader.loading">Retrieving video files from Threads...</p>
+        </div>
+
+        <!-- RESULT CARD -->
+        <div id="downloaderResult" class="downloader-result-card" hidden>
+          <div class="dl-preview-container">
+            <video id="dlVideoPlayer" controls playsinline preload="metadata">
+              <source id="dlVideoSource" src="" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+          </div>
+          <div class="dl-info-container">
+            <div class="dl-author-info">
+              <span class="dl-author-avatar">👤</span>
+              <strong id="dlAuthorName">Threads User</strong>
+            </div>
+            <p id="dlCaptionText" class="dl-caption"></p>
+            
+            <!-- Quality Selector -->
+            <div class="dl-quality-section" style="margin-bottom: 1.5rem;">
+              <label for="dlQualitySelect" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #e2e8f0;" data-i18n="downloader.qualityLabel">Pilih kualitas yang Anda inginkan:</label>
+              <select id="dlQualitySelect" style="width: 100%; padding: 12px; border-radius: 12px; background: rgba(15, 15, 30, 0.8); border: 2px solid rgba(255, 255, 255, 0.15); color: white; font-family: inherit; font-size: 1rem; outline: none; cursor: pointer;">
+                <option value="hd" data-i18n="downloader.qualityHD">Kualitas Tinggi (HD)</option>
+                <option value="sd" data-i18n="downloader.qualitySD">Kualitas Standar (SD)</option>
+              </select>
+            </div>
+            
+            <div class="dl-actions">
+              <button id="dlDownloadBtn" class="btn btn--primary btn--dl-video">
+                <span aria-hidden="true">📥</span>
+                <span data-i18n="downloader.downloadBtn">Unduh</span>
+              </button>
+              <button id="dlNewBtn" class="btn btn--ghost">
+                <span aria-hidden="true">🔄</span>
+                <span data-i18n="downloader.newBtn">Download Another</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- HOW TO DOWNLOAD GUIDE -->
+        <div class="downloader-guide">
+          <h3 class="guide-title" data-i18n="downloader.guideTitle">How to Download Threads Videos</h3>
+          <div class="guide-steps">
+            <div class="guide-step">
+              <div class="guide-num">1</div>
+              <p data-i18n="downloader.step1">Open Threads and copy the link of the post containing the video.</p>
+            </div>
+            <div class="guide-step">
+              <div class="guide-num">2</div>
+              <p data-i18n="downloader.step2">Paste the copied link into the input box above and click "Fetch Video".</p>
+            </div>
+            <div class="guide-step">
+              <div class="guide-num">3</div>
+              <p data-i18n="downloader.step3">Click the "Download Video" button to save the MP4 to your device.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOWNLOADER FAQ -->
+        <div class="downloader-faq">
+          <h3 class="guide-title" data-i18n="downloader.faqTitle">Frequently Asked Questions</h3>
+          <div class="faq-item">
+            <h4 class="faq-q" data-i18n="downloader.faqQ1">Is it safe and anonymous?</h4>
+            <p class="faq-a" data-i18n="downloader.faqA1">Yes! We do not require any login credentials, passwords, or personal details. The video is downloaded directly via our secure proxy servers.</p>
+          </div>
+          <div class="faq-item">
+            <h4 class="faq-q" data-i18n="downloader.faqQ2">Why can't I download videos from private accounts?</h4>
+            <p class="faq-a" data-i18n="downloader.faqA2">Our downloader can only access public posts. Private accounts block external data fetching to protect user privacy.</p>
+          </div>
+          <div class="faq-item">
+            <h4 class="faq-q" data-i18n="downloader.faqQ3">What format are the videos saved in?</h4>
+            <p class="faq-a" data-i18n="downloader.faqA3">Videos are downloaded in high-definition MP4 format, compatible with all modern smartphones, tablets, and desktop computers.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- HOW IT WORKS SECTION -->
     <section class="how-section" aria-labelledby="howTitle">
       <div class="container">
@@ -434,12 +559,12 @@
         <button class="share-opt" data-platform="twitter">
           <span class="share-opt-icon" aria-hidden="true">𝕏</span>
           <span class="share-opt-name">Twitter / X</span>
-          <span class="share-opt-dim">1200×630</span>
+          <span class="share-opt-dim">1080×1350</span>
         </button>
         <button class="share-opt" data-platform="instagram">
           <span class="share-opt-icon" aria-hidden="true">📸</span>
           <span class="share-opt-name">Instagram</span>
-          <span class="share-opt-dim">1080×1080</span>
+          <span class="share-opt-dim">1080×1350</span>
         </button>
         <button class="share-opt" data-platform="threads">
           <span class="share-opt-icon" aria-hidden="true">🧵</span>
@@ -545,10 +670,10 @@
   <script src="/assets/js/preview.js?v=1.0.1"         defer></script>
   <script src="/assets/js/manual-mode.js?v=1.0.1"     defer></script>
   <script src="/assets/js/passport-render.js?v=1.0.1" defer></script>
-  <script src="/assets/js/passport-canvas.js?v=1.0.1" defer></script>
-  <script src="/assets/js/share.js?v=1.0.1"           defer></script>
+  <script src="/assets/js/passport-canvas.js?v=1.0.3" defer></script>
+  <script src="/assets/js/share.js?v=1.0.3"           defer></script>
   <script src="/assets/js/adsense.js?v=1.0.1"         defer></script>
-  <script src="/assets/js/app.js?v=1.0.1"             defer></script>
+  <script src="/assets/js/app.js?v=1.0.3"             defer></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));

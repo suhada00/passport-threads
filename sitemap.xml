@@ -1,11 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <sitemap>
-    <loc>https://threadspassport.fun/sitemap-pages.xml</loc>
-    <lastmod>2026-07-01T13:07:40+07:00</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://threadspassport.fun/sitemap-blog.xml</loc>
-    <lastmod>2026-07-01T13:07:40+07:00</lastmod>
-  </sitemap>
-</sitemapindex>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<!--  Static Pages  -->
+<url>
+<loc>https://threadspassport.fun</loc>
+</url>
+<url>
+<loc>https://threadspassport.fun/blog</loc>
+</url>
+<url>
+<loc>https://threadspassport.fun/legal/privacy-policy.html</loc>
+</url>
+<url>
+<loc>https://threadspassport.fun/legal/terms-of-service.html</loc>
+</url>
+<url>
+<loc>https://threadspassport.fun/legal/cookie-policy.html</loc>
+</url>
+<!--  Halaman Artikel Dinamis  -->
+<url>
+<loc>https://threadspassport.fun/blog/what-your-threads-says-about-your-personality.html</loc>
+</url>
+<url>
+<loc>https://threadspassport.fun/blog/8-types-of-threads-users-personality-guide.html</loc>
+</url>
+<url>
+<loc>https://threadspassport.fun/blog/how-to-grow-on-threads-2026-algorithm-explained.html</loc>
+</url>
+<url>
+<loc>https://threadspassport.fun/blog/threads-vs-twitter-2026-honest-comparison.html</loc>
+</url>
+<url>
+<loc>https://threadspassport.fun/blog/psychology-behind-viral-threads-posts.html</loc>
+</url>
+</urlset>

@@ -2,10 +2,10 @@
 /* Share Logic Controller — Web Share API dispatcher and social intent generator with multi-language support */
 
 const PLATFORM_CONFIGS = {
-  twitter:   { w: 1200, h: 630  },   // Landscape card
-  instagram: { w: 1080, h: 1080 },   // Square post
-  threads:   { w: 1080, h: 1350 },   // Portrait 4:5 post
-  download:  { w: 1500, h: 1900 },   // High-res output
+  twitter:   { w: 1080, h: 1350 },   // Portrait 4:5 passport card
+  instagram: { w: 1080, h: 1350 },   // Portrait 4:5 passport card
+  threads:   { w: 1080, h: 1350 },   // Portrait 4:5 passport card
+  download:  { w: 1200, h: 1500 },   // High-res portrait 4:5 passport card
 };
 
 const SHARE_TEXTS = {
@@ -161,20 +161,21 @@ async function handleShare(platform, passportData) {
       const imageBlob = await renderPassportToBlob('download', passportData);
       const imageFile = new File([imageBlob], 'my-threads-passport.png', { type: 'image/png' });
 
+      const shareUrl = `${window.location.origin}?u=${encodeURIComponent(passportData.profile.username)}`;
+      const shareText = `${dict.mobileText(passportData.passport.title, passportData.passport.nation)}\n${shareUrl}`;
+
       // Check if browser supports sharing files
       if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
         await navigator.share({
           title: 'My Threads Passport 🛂',
-          text: dict.mobileText(passportData.passport.title, passportData.passport.nation),
-          url: `${window.location.origin}?u=${encodeURIComponent(passportData.profile.username)}`,
+          text: shareText,
           files: [imageFile]
         });
       } else {
         // Fallback share text + link without file
         await navigator.share({
           title: 'My Threads Passport 🛂',
-          text: dict.mobileText(passportData.passport.title, passportData.passport.nation),
-          url: `${window.location.origin}?u=${encodeURIComponent(passportData.profile.username)}`
+          text: shareText
         });
       }
       showToast(dict.toastSuccess);
@@ -198,12 +199,33 @@ async function handleShare(platform, passportData) {
   }
 }
 
+async function copyImageToClipboard(blob) {
+  try {
+    if (navigator.clipboard && window.ClipboardItem) {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/png': blob
+        })
+      ]);
+      return true;
+    }
+  } catch (e) {
+    console.warn('Clipboard image write failed, falling back to download only:', e);
+  }
+  return false;
+}
+
 async function shareToTwitter(data) {
   const dict = getDict();
+  // Open window synchronously to bypass mobile browser popup blockers
+  const shareWindow = window.open('about:blank', '_blank');
   showToast(dict.toastTwitter);
   try {
     const img = await renderPassportToBlob('twitter', data);
     triggerDownload(img, 'threads-passport-twitter.png');
+    
+    // Copy to clipboard for easy pasting
+    const copied = await copyImageToClipboard(img);
     
     const text = encodeURIComponent(
       dict.twitterText(data.passport.title, data.passport.nation, data.passport.tagline)
@@ -211,31 +233,73 @@ async function shareToTwitter(data) {
     const url  = encodeURIComponent(`${window.location.origin}?u=${encodeURIComponent(data.profile.username)}`);
     const tags = 'ThreadsPassport,Threads';
     
-    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=${tags}`, '_blank', 'noopener');
-    showToast(dict.toastTwitterDone);
+    const targetUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=${tags}`;
+    if (shareWindow) {
+      shareWindow.location.href = targetUrl;
+    } else {
+      window.open(targetUrl, '_blank', 'noopener');
+    }
+    
+    if (copied) {
+      const activeLang = window.PT_LANG || 'en';
+      const msg = activeLang === 'id' 
+        ? 'Gambar disalin & diunduh! Tempel (paste) ke postingan Anda 📸'
+        : 'Image copied & downloaded! Paste it in your post 📸';
+      showToast(msg, 4000);
+    } else {
+      showToast(dict.toastTwitterDone);
+    }
   } catch (err) {
+    if (shareWindow) shareWindow.close();
     showToast(dict.toastCopyFail);
   }
 }
 
 async function shareToInstagram(data) {
   const dict = getDict();
+  // Open window synchronously to bypass mobile browser popup blockers
+  const shareWindow = window.open('about:blank', '_blank');
   showToast(dict.toastInstagram);
   try {
     const img = await renderPassportToBlob('instagram', data);
     triggerDownload(img, 'threads-passport-instagram.png');
-    showToast(dict.toastInstagramDone, 4000);
+    
+    // Copy to clipboard for easy pasting
+    const copied = await copyImageToClipboard(img);
+    
+    const targetUrl = 'https://www.instagram.com/';
+    if (shareWindow) {
+      shareWindow.location.href = targetUrl;
+    } else {
+      window.open(targetUrl, '_blank', 'noopener');
+    }
+    
+    if (copied) {
+      const activeLang = window.PT_LANG || 'en';
+      const msg = activeLang === 'id' 
+        ? 'Gambar disalin & disimpan! Tempel (paste) di Feed/Stories Anda 📸'
+        : 'Image copied & saved! Paste it in your Feed or Stories 📸';
+      showToast(msg, 4000);
+    } else {
+      showToast(dict.toastInstagramDone, 4000);
+    }
   } catch (err) {
+    if (shareWindow) shareWindow.close();
     showToast(dict.toastCopyFail);
   }
 }
 
 async function shareToThreads(data) {
   const dict = getDict();
+  // Open window synchronously to bypass mobile browser popup blockers
+  const shareWindow = window.open('about:blank', '_blank');
   showToast(dict.toastThreads);
   try {
     const img  = await renderPassportToBlob('threads', data);
     triggerDownload(img, 'threads-passport.png');
+    
+    // Copy to clipboard for easy pasting
+    const copied = await copyImageToClipboard(img);
     
     const url = `${window.location.origin}?u=${encodeURIComponent(data.profile.username)}`;
     const stamp = (data.passport.stamps && data.passport.stamps.length > 0) ? data.passport.stamps[0] : 'Chronically Online';
@@ -243,9 +307,24 @@ async function shareToThreads(data) {
     const text = encodeURIComponent(
       dict.threadsText(data.passport.title, data.passport.nation, data.passport.tagline, stamp, url)
     );
-    window.open(`https://www.threads.net/intent/post?text=${text}`, '_blank', 'noopener');
-    showToast(dict.toastThreadsDone);
+    const targetUrl = `https://www.threads.net/intent/post?text=${text}`;
+    if (shareWindow) {
+      shareWindow.location.href = targetUrl;
+    } else {
+      window.open(targetUrl, '_blank', 'noopener');
+    }
+    
+    if (copied) {
+      const activeLang = window.PT_LANG || 'en';
+      const msg = activeLang === 'id' 
+        ? 'Paspor disalin & diunduh! Tempel (paste) ke postingan Threads Anda 🧵'
+        : 'Passport copied & downloaded! Paste it into your Threads post 🧵';
+      showToast(msg, 4000);
+    } else {
+      showToast(dict.toastThreadsDone);
+    }
   } catch (err) {
+    if (shareWindow) shareWindow.close();
     showToast(dict.toastCopyFail);
   }
 }
@@ -316,5 +395,6 @@ function showToast(message, duration = 3000) {
 
 window.PT_Share = {
   handleShare,
-  showToast
+  showToast,
+  renderPassportToBlob
 };

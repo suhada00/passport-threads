@@ -50,6 +50,19 @@ export default {
           if (request.method !== 'POST') return respond({ error: 'Method not allowed' }, 405);
           return await handleAnalyzeProfile(request, env, ctx, respond);
 
+        case '/api/fetch-video':
+          if (request.method !== 'POST') return respond({ error: 'Method not allowed' }, 405);
+          return await handleFetchVideo(request, env, ctx, respond);
+
+        case '/api/download-video':
+          if (request.method !== 'GET') {
+            return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+              status: 405,
+              headers: CORS_HEADERS(origin)
+            });
+          }
+          return await handleDownloadVideo(request, env, origin);
+
         case '/api/image-proxy':
           if (request.method !== 'GET') {
             return new Response(JSON.stringify({ error: 'Method not allowed' }), {
@@ -664,5 +677,165 @@ async function handleStats(env, respond) {
     return respond({ total_passports: total });
   } catch (err) {
     return respond({ total_passports: 0 });
+  }
+}
+
+async function handleFetchVideo(request, env, ctx, respond) {
+  const body = await request.json();
+  const { url } = body;
+  if (!url) return respond({ error: 'URL required' }, 400);
+
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname.toLowerCase();
+    
+    if (hostname !== 'threads.net' && hostname !== 'www.threads.net' && !hostname.endsWith('.threads.net')) {
+      return respond({ error: 'Invalid URL. Only threads.net links are supported.' }, 400);
+    }
+
+    // Rate Limiting Check
+    const clientIP = request.headers.get('CF-Connecting-IP')
+      || request.headers.get('X-Forwarded-For')
+      || 'unknown';
+    const rlKey = `rl:video:${clientIP}`;
+    let rlCount = 0;
+    try {
+      rlCount = parseInt(await env.KV.get(rlKey) || '0');
+    } catch (err) {
+      console.error('KV Read Error for rate limiting:', err);
+    }
+
+    if (rlCount >= RATE_LIMIT_MAX) {
+      return respond({
+        error: 'Too many requests. Please wait a minute before trying again.',
+        code: 'RATE_LIMITED',
+        retryAfter: RATE_LIMIT_WINDOW
+      }, 429);
+    }
+    ctx.waitUntil(incrementCounter(env, rlKey, rlCount));
+
+    // Call lovethreads.net search API
+    const searchForm = new URLSearchParams({
+      q: url,
+      t: "media",
+      lang: "en",
+    });
+
+    const searchRes = await fetch("https://lovethreads.net/api/ajaxSearch", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "Origin": "https://lovethreads.net",
+        "Referer": "https://lovethreads.net/en",
+        "X-Requested-With": "XMLHttpRequest",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      body: searchForm.toString()
+    });
+
+    if (!searchRes.ok) {
+      return respond({ error: "Failed to query the downloader API." }, 500);
+    }
+
+    const data = await searchRes.json();
+    if (data.status !== "ok" || !data.data) {
+      const rawError = data.mess || "Failed to retrieve video details.";
+      const cleanError = rawError.replace(/<[^>]*>/g, '').replace('Error: ', '').trim();
+      return respond({ error: cleanError }, 400);
+    }
+
+    const html = data.data;
+
+    // Extract thumbnail
+    const thumbMatch = html.match(/<div class="download-items__thumb"[^>]*>\s*<img[^>]+src="([^"]+)"/i);
+    const thumbnailUrl = thumbMatch ? thumbMatch[1] : '';
+
+    // Extract video URL (HD)
+    const videoMatch = html.match(/<a[^>]+title="Download Video"[^>]+href="([^"]+)"/i) || 
+                       html.match(/<a[^>]+href="([^"]+)"[^>]+title="Download Video"/i) ||
+                       html.match(/<a[^>]+class="download-items__btn"[^>]+href="([^"]+)"/i);
+    
+    if (!videoMatch) {
+      return respond({ error: "No video found in this post. Make sure it contains a video and is public." }, 404);
+    }
+
+    const videoUrlHD = videoMatch[1];
+    let videoUrlSD = videoUrlHD;
+
+    let author = "Threads User";
+    let caption = "Threads Video";
+
+    return respond({
+      success: true,
+      videoUrl: videoUrlHD,
+      videoUrlHD,
+      videoUrlSD,
+      thumbnailUrl,
+      caption,
+      author
+    });
+  } catch (err) {
+    console.error('Fetch video execution error:', err);
+    return respond({ error: 'Failed to process request. Make sure the URL is valid.' }, 500);
+  }
+}
+
+async function handleDownloadVideo(request, env, origin) {
+  const urlObj = new URL(request.url);
+  const targetUrlStr = urlObj.searchParams.get('url');
+  
+  if (!targetUrlStr) {
+    return new Response(JSON.stringify({ error: 'URL parameter required' }), {
+      status: 400,
+      headers: CORS_HEADERS(origin)
+    });
+  }
+
+  try {
+    const targetUrl = new URL(targetUrlStr);
+    const hostname = targetUrl.hostname.toLowerCase();
+    
+    // Whitelist domains matching *.cdninstagram.com, *.fbcdn.net, *.threads.net, *.instagram.com
+    const isWhitelisted = hostname.endsWith('.cdninstagram.com') ||
+                          hostname.endsWith('.fbcdn.net') ||
+                          hostname.endsWith('.threads.net') ||
+                          hostname.endsWith('.instagram.com') ||
+                          hostname === 'threads.net' ||
+                          hostname === 'instagram.com';
+                          
+    if (!isWhitelisted) {
+      return new Response(JSON.stringify({ error: 'Domain not whitelisted' }), {
+        status: 403,
+        headers: CORS_HEADERS(origin)
+      });
+    }
+
+    const videoRes = await fetch(targetUrlStr, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+
+    if (!videoRes.ok) {
+      return new Response(JSON.stringify({ error: 'Failed to fetch video' }), {
+        status: videoRes.status,
+        headers: CORS_HEADERS(origin)
+      });
+    }
+
+    const headers = CORS_HEADERS(origin);
+    headers['Content-Type'] = 'video/mp4';
+    headers['Content-Disposition'] = 'attachment; filename="threads-video.mp4"';
+    headers['Cache-Control'] = 'public, max-age=86400';
+
+    return new Response(videoRes.body, {
+      status: 200,
+      headers: headers
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: 'Invalid URL' }), {
+      status: 400,
+      headers: CORS_HEADERS(origin)
+    });
   }
 }

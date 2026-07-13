@@ -12,84 +12,107 @@ class PassportCanvas {
       const profile = data.profile || {};
       const passport = data.passport || {};
       
-      // Load avatar image asynchronously with crossOrigin support
+      // Get Geo theme for the background pattern
+      const countryCode = passport.country || 'US';
+      const geoTheme = window.getGeoTheme ? window.getGeoTheme(countryCode) : { flag: '🌍', passportStyle: 'default' };
+      const bgStyle = geoTheme.passportStyle || 'default';
+      
+      // Load images
+      let loadedCount = 0;
+      const totalImages = profile.avatar ? 2 : 1;
+      
       const avatarImg = new Image();
       avatarImg.crossOrigin = 'anonymous';
       
+      const bgPatternImg = new Image();
+      bgPatternImg.crossOrigin = 'anonymous';
+      
       const proceedDrawing = () => {
-        // 1. Draw background gradient
-        const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
-        bgGrad.addColorStop(0, '#1a1a2e');
-        bgGrad.addColorStop(1, '#0f3460');
-        ctx.fillStyle = bgGrad;
-        ctx.fillRect(0, 0, width, height);
-
-        // 2. Resolve layouts based on dimensions
-        if (width === 1200 && height === 630) {
-          // Twitter Landscape
-          this.drawPassportCard(ctx, 60, 50, 440, 530, profile, passport, avatarImg);
-          this.drawSideInfo(ctx, 560, 50, 580, 530, profile, passport);
-        } else if (width === 1080 && height === 1080) {
-          // Instagram Square
-          this.drawPassportCard(ctx, (1080 - 460) / 2, 180, 460, 600, profile, passport, avatarImg);
-          this.drawCenteredInfo(ctx, 1080, 80, profile, passport);
-        } else if (width === 1080 && height === 1350) {
-          // Threads Portrait
-          this.drawPassportCard(ctx, (1080 - 520) / 2, 200, 520, 700, profile, passport, avatarImg);
-          this.drawCenteredInfo(ctx, 1080, 90, profile, passport);
-        } else {
-          // High-Res Download (1500 x 1900)
-          this.drawPassportCard(ctx, (1500 - 800) / 2, 150, 800, 1100, profile, passport, avatarImg);
-          this.drawDownloadInfo(ctx, 1500, 1350, profile, passport);
-        }
-
-        // Draw Watermark at the bottom
-        ctx.font = 'bold 16px monospace';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-        ctx.textAlign = 'right';
-        ctx.fillText('threadspassport.fun 🛂', width - 40, height - 30);
+        // Draw the passport card filling the entire canvas
+        this.drawPassportCard(ctx, 0, 0, width, height, profile, passport, avatarImg, bgPatternImg);
 
         // Resolve canvas to Blob
         canvas.toBlob((blob) => {
           resolve(blob);
         }, 'image/png');
       };
+      
+      const checkLoaded = () => {
+        loadedCount++;
+        if (loadedCount === totalImages) {
+          proceedDrawing();
+        }
+      };
 
+      // Load background pattern SVG
+      bgPatternImg.src = `/assets/img/passport-bg/${bgStyle}.svg`;
+      bgPatternImg.onload = checkLoaded;
+      bgPatternImg.onerror = () => {
+        console.warn('Background pattern SVG failed to load.');
+        checkLoaded();
+      };
+
+      // Load avatar image if available
       if (profile.avatar) {
         const proxyUrl = window.AppController 
           ? window.AppController.getEndpoint('/api/image-proxy?url=' + encodeURIComponent(profile.avatar)) 
           : '/api/image-proxy?url=' + encodeURIComponent(profile.avatar);
         
         avatarImg.src = proxyUrl;
-        avatarImg.onload = proceedDrawing;
+        avatarImg.onload = checkLoaded;
         avatarImg.onerror = () => {
           console.warn('Avatar image failed to load in canvas, drawing default avatar placeholder.');
-          proceedDrawing();
+          checkLoaded();
         };
-      } else {
-        proceedDrawing();
       }
     });
   }
 
   // Draw core passport card structure
-  drawPassportCard(ctx, x, y, w, h, profile, passport, avatarImg) {
+  drawPassportCard(ctx, x, y, w, h, profile, passport, avatarImg, bgPatternImg) {
     ctx.save();
     
-    // Draw card container with rounded corners
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-    ctx.shadowBlur = 30;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 15;
+    // Draw card container
+    const isFullCanvas = (x === 0 && y === 0);
+    const scale = w / 520;
+    
+    if (!isFullCanvas) {
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+      ctx.shadowBlur = 30;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 15;
+    }
     
     ctx.fillStyle = '#fdfbf7'; // Passport textured paper color
-    this.roundRect(ctx, x, y, w, h, 20);
-    ctx.fill();
+    if (isFullCanvas) {
+      ctx.fillRect(x, y, w, h);
+    } else {
+      this.roundRect(ctx, x, y, w, h, Math.round(20 * scale));
+      ctx.fill();
+    }
     
-    ctx.shadowColor = 'transparent'; // Reset shadow
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = '#d4c5b3';
-    ctx.stroke();
+    if (!isFullCanvas) {
+      ctx.shadowColor = 'transparent'; // Reset shadow
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#d4c5b3';
+      ctx.stroke();
+    }
+
+    // Draw background pattern if loaded
+    if (bgPatternImg && bgPatternImg.complete && bgPatternImg.naturalWidth !== 0) {
+      ctx.save();
+      if (isFullCanvas) {
+        ctx.beginPath();
+        ctx.rect(x, y, w, h);
+        ctx.clip();
+      } else {
+        this.roundRect(ctx, x, y, w, h, Math.round(20 * scale));
+        ctx.clip();
+      }
+      ctx.globalAlpha = 0.08;
+      ctx.drawImage(bgPatternImg, x, y, w, h);
+      ctx.restore();
+    }
 
     // Draw passport inner margins
     const margin = w * 0.05;
@@ -118,19 +141,19 @@ class PassportCanvas {
     ctx.font = `bold ${Math.floor(w * 0.024)}px sans-serif`;
     ctx.fillText(dict.docType.toUpperCase(), innerX, innerY + (h * 0.075));
 
-    ctx.font = '28px sans-serif';
+    ctx.font = `${Math.round(28 * scale)}px sans-serif`;
     ctx.textAlign = 'right';
     ctx.fillText('🛂', innerX + innerW, innerY + (h * 0.05));
 
     // Double header border
     ctx.strokeStyle = '#d4c5b3';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = Math.round(2 * scale);
     ctx.beginPath();
     ctx.moveTo(innerX, innerY + (h * 0.095));
     ctx.lineTo(innerX + innerW, innerY + (h * 0.095));
     ctx.stroke();
 
-    ctx.lineWidth = 1;
+    ctx.lineWidth = Math.round(1 * scale);
     ctx.beginPath();
     ctx.moveTo(innerX, innerY + (h * 0.103));
     ctx.lineTo(innerX + innerW, innerY + (h * 0.103));
@@ -142,12 +165,12 @@ class PassportCanvas {
 
     // Photo Box & Clip
     ctx.fillStyle = '#e2e8f0';
-    this.roundRect(ctx, innerX, photoY, photoSize, photoSize, 8);
+    this.roundRect(ctx, innerX, photoY, photoSize, photoSize, Math.round(8 * scale));
     ctx.fill();
 
     if (avatarImg && avatarImg.complete && avatarImg.naturalWidth !== 0) {
       ctx.save();
-      this.roundRect(ctx, innerX, photoY, photoSize, photoSize, 8);
+      this.roundRect(ctx, innerX, photoY, photoSize, photoSize, Math.round(8 * scale));
       ctx.clip();
       ctx.drawImage(avatarImg, innerX, photoY, photoSize, photoSize);
       ctx.restore();
@@ -167,8 +190,8 @@ class PassportCanvas {
     // Name field
     const nameX = innerX + photoSize + (w * 0.04);
     ctx.fillStyle = '#6b7280';
-    ctx.font = 'bold 8px sans-serif';
-    ctx.fillText(dict.name.toUpperCase(), nameX, photoY + 12);
+    ctx.font = `bold ${Math.round(8 * scale)}px sans-serif`;
+    ctx.fillText(dict.name.toUpperCase(), nameX, photoY + Math.round(12 * scale));
     
     ctx.fillStyle = '#1a1a2e';
     ctx.font = `bold ${Math.floor(w * 0.036)}px sans-serif`;
@@ -176,7 +199,7 @@ class PassportCanvas {
 
     // Username field
     ctx.fillStyle = '#6b7280';
-    ctx.font = 'bold 8px sans-serif';
+    ctx.font = `bold ${Math.round(8 * scale)}px sans-serif`;
     ctx.fillText(dict.username.toUpperCase(), nameX, photoY + (h * 0.10));
     
     ctx.fillStyle = '#e94560'; // Accent red username
@@ -187,24 +210,24 @@ class PassportCanvas {
     const nationY = innerY + (h * 0.32);
     const nationH = h * 0.09;
     ctx.fillStyle = 'rgba(124, 58, 237, 0.06)';
-    this.roundRect(ctx, innerX, nationY, innerW, nationH, 10);
+    this.roundRect(ctx, innerX, nationY, innerW, nationH, Math.round(10 * scale));
     ctx.fill();
-    ctx.lineWidth = 1;
+    ctx.lineWidth = Math.round(1 * scale);
     ctx.strokeStyle = 'rgba(124, 58, 237, 0.2)';
     ctx.stroke();
 
     ctx.fillStyle = '#6b7280';
-    ctx.font = 'bold 8px sans-serif';
-    ctx.fillText(dict.nation.toUpperCase(), innerX + 12, nationY + 16);
+    ctx.font = `bold ${Math.round(8 * scale)}px sans-serif`;
+    ctx.fillText(dict.nation.toUpperCase(), innerX + Math.round(12 * scale), nationY + Math.round(16 * scale));
 
     ctx.fillStyle = '#7c3aed';
     ctx.font = `bold ${Math.floor(w * 0.04)}px "Playfair Display", Georgia, serif`;
-    ctx.fillText(passport.nation || 'Republic of Internet', innerX + 12, nationY + (nationH * 0.72));
+    ctx.fillText(passport.nation || 'Republic of Internet', innerX + Math.round(12 * scale), nationY + (nationH * 0.72));
 
     // ── OFFICIAL TITLE ──
     const titleY = innerY + (h * 0.44);
     ctx.fillStyle = '#6b7280';
-    ctx.font = 'bold 8px sans-serif';
+    ctx.font = `bold ${Math.round(8 * scale)}px sans-serif`;
     ctx.fillText(dict.title.toUpperCase(), innerX, titleY);
 
     ctx.fillStyle = '#1a1a2e';
@@ -214,7 +237,7 @@ class PassportCanvas {
     // ── PERSONALITY SCORES ──
     const scoresY = innerY + (h * 0.52);
     ctx.fillStyle = '#6b7280';
-    ctx.font = 'bold 8px sans-serif';
+    ctx.font = `bold ${Math.round(8 * scale)}px sans-serif`;
     ctx.fillText(dict.metrics.toUpperCase(), innerX, scoresY);
 
     const scores = passport.scores || {
@@ -266,7 +289,7 @@ class PassportCanvas {
     scoreKeys.forEach((key, idx) => {
       const col = Math.floor(idx / 5);
       const rowIdx = idx % 5;
-      const rowY = scoresY + 14 + (rowIdx * (h * 0.038));
+      const rowY = scoresY + Math.round(14 * scale) + (rowIdx * (h * 0.038));
       const val = scores[key];
       const emoji = scoreEmojis[key] || '📊';
       const scoreLabel = langMetrics[key] || (key.charAt(0).toUpperCase() + key.slice(1));
@@ -290,33 +313,33 @@ class PassportCanvas {
       // Score Name & Emoji
       ctx.fillStyle = '#1a1a2e';
       ctx.font = `bold ${Math.floor(w * 0.023)}px sans-serif`;
-      ctx.fillText(`${emoji} ${scoreLabel}`, labelX, rowY + 6);
+      ctx.fillText(`${emoji} ${scoreLabel}`, labelX, rowY + Math.round(6 * scale));
 
       // Score Track
       ctx.fillStyle = '#e2dcd3';
-      this.roundRect(ctx, trackX, rowY, trackW, 6, 3);
+      this.roundRect(ctx, trackX, rowY, trackW, Math.round(6 * scale), Math.round(3 * scale));
       ctx.fill();
 
       // Score Bar Fill
       ctx.fillStyle = '#e94560';
       const fillW = trackW * (val / 100);
       if (fillW > 0) {
-        this.roundRect(ctx, trackX, rowY, fillW, 6, 3);
+        this.roundRect(ctx, trackX, rowY, fillW, Math.round(6 * scale), Math.round(3 * scale));
         ctx.fill();
       }
 
       // Score number
       ctx.fillStyle = '#e94560';
-      ctx.font = 'bold 9px monospace';
+      ctx.font = `bold ${Math.round(9 * scale)}px monospace`;
       ctx.textAlign = 'right';
-      ctx.fillText(String(val), numX, rowY + 7);
+      ctx.fillText(String(val), numX, rowY + Math.round(7 * scale));
       ctx.textAlign = 'left';
     });
 
     // ── VISA STAMPS ──
     const stampsY = innerY + (h * 0.77);
     ctx.fillStyle = '#6b7280';
-    ctx.font = 'bold 8px sans-serif';
+    ctx.font = `bold ${Math.round(8 * scale)}px sans-serif`;
     ctx.fillText(dict.stamps.toUpperCase(), innerX, stampsY);
 
     const stamps = passport.stamps || ['Scroll Survivor', 'Thread Veteran', 'Overthinker'];
@@ -325,27 +348,27 @@ class PassportCanvas {
     ctx.save();
     let currentStampX = innerX;
     stamps.forEach((stamp, idx) => {
-      ctx.font = '9px sans-serif';
+      ctx.font = `${Math.round(9 * scale)}px sans-serif`;
       const textWidth = ctx.measureText(stamp).width;
-      const stampW = textWidth + 12;
-      const stampH = 18;
+      const stampW = textWidth + Math.round(12 * scale);
+      const stampH = Math.round(18 * scale);
 
       ctx.save();
-      ctx.translate(currentStampX + (stampW / 2), stampsY + 14);
+      ctx.translate(currentStampX + (stampW / 2), stampsY + Math.round(14 * scale));
       // Give stamps slight random-looking rotations
       const angle = (idx === 0) ? -0.06 : (idx === 1) ? 0.04 : -0.02;
       ctx.rotate(angle);
 
       // Dash Border
       ctx.strokeStyle = stampColors[idx];
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = Math.round(1.5 * scale);
       ctx.setLineDash([3, 2]);
-      this.roundRect(ctx, -stampW / 2, -stampH / 2, stampW, stampH, 4);
+      this.roundRect(ctx, -stampW / 2, -stampH / 2, stampW, stampH, Math.round(4 * scale));
       ctx.stroke();
 
       // Text inside stamp
       ctx.fillStyle = stampColors[idx];
-      ctx.font = 'bold 8px sans-serif';
+      ctx.font = `bold ${Math.round(8 * scale)}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(stamp.toUpperCase(), 0, 0);

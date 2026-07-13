@@ -8,6 +8,35 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 8081;
 
+const publicDir = fs.existsSync(path.join(__dirname, 'public'))
+  ? path.join(__dirname, 'public')
+  : __dirname;
+
+const uploadsDir = path.join(publicDir, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Endpoint to upload generated passport image (before JSON body parser)
+app.post('/api/upload-passport', express.raw({ type: 'image/png', limit: '5mb' }), (req, res) => {
+  const username = req.headers['x-username'] ? req.headers['x-username'].trim() : null;
+  if (!username) {
+    return res.status(400).send('Missing username');
+  }
+
+  const clean = sanitizeUsername(username);
+  const filePath = path.join(uploadsDir, `${clean}.png`);
+
+  fs.writeFile(filePath, req.body, (err) => {
+    if (err) {
+      console.error('Failed to save uploaded image:', err);
+      return res.status(500).send('Failed to save image');
+    }
+    console.log(`Saved passport image for @${clean} to ${filePath}`);
+    res.json({ success: true, url: `/uploads/${clean}.png` });
+  });
+});
+
 // Middlewares
 app.use(cors());
 app.use(express.json());
@@ -41,9 +70,6 @@ function checkRateLimit(req, res, next) {
 
 // Persist stats and data cache in a simple JSON file
 const DB_PATH = path.join(__dirname, 'data', 'db.json');
-const publicDir = fs.existsSync(path.join(__dirname, 'public'))
-  ? path.join(__dirname, 'public')
-  : __dirname;
 
 // Ensure data folder exists
 if (!fs.existsSync(path.dirname(DB_PATH))) {
@@ -686,6 +712,131 @@ app.get('/api/image-proxy', async (req, res) => {
   }
 });
 
+// /api/fetch-video
+app.post('/api/fetch-video', checkRateLimit, async (req, res) => {
+  const { url } = req.body;
+  if (!url) return res.status(400).json({ error: 'URL required' });
+
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname.toLowerCase();
+    
+    if (hostname !== 'threads.net' && hostname !== 'www.threads.net' && !hostname.endsWith('.threads.net')) {
+      return res.status(400).json({ error: 'Invalid URL. Only threads.net links are supported.' });
+    }
+
+    // Call lovethreads.net search API
+    const searchForm = new URLSearchParams({
+      q: url,
+      t: "media",
+      lang: "en",
+    });
+
+    const searchRes = await fetch("https://lovethreads.net/api/ajaxSearch", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "Origin": "https://lovethreads.net",
+        "Referer": "https://lovethreads.net/en",
+        "X-Requested-With": "XMLHttpRequest",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      body: searchForm.toString()
+    });
+
+    if (!searchRes.ok) {
+      return res.status(500).json({ error: "Failed to query the downloader API." });
+    }
+
+    const data = await searchRes.json();
+    if (data.status !== "ok" || !data.data) {
+      const rawError = data.mess || "Failed to retrieve video details.";
+      const cleanError = rawError.replace(/<[^>]*>/g, '').replace('Error: ', '').trim();
+      return res.status(400).json({ error: cleanError });
+    }
+
+    const html = data.data;
+
+    // Extract thumbnail
+    const thumbMatch = html.match(/<div class="download-items__thumb"[^>]*>\s*<img[^>]+src="([^"]+)"/i);
+    const thumbnailUrl = thumbMatch ? thumbMatch[1] : '';
+
+    // Extract video URL (HD)
+    const videoMatch = html.match(/<a[^>]+title="Download Video"[^>]+href="([^"]+)"/i) || 
+                       html.match(/<a[^>]+href="([^"]+)"[^>]+title="Download Video"/i) ||
+                       html.match(/<a[^>]+class="download-items__btn"[^>]+href="([^"]+)"/i);
+    
+    if (!videoMatch) {
+      return res.status(404).json({ error: "No video found in this post. Make sure it contains a video and is public." });
+    }
+
+    const videoUrlHD = videoMatch[1];
+    let videoUrlSD = videoUrlHD;
+
+    let author = "Threads User";
+    let caption = "Threads Video";
+
+    res.json({
+      success: true,
+      videoUrl: videoUrlHD,
+      videoUrlHD,
+      videoUrlSD,
+      thumbnailUrl,
+      caption,
+      author
+    });
+  } catch (err) {
+    console.error('Fetch video error:', err);
+    res.status(500).json({ error: 'Failed to process request. Make sure the URL is valid.' });
+  }
+});
+
+// /api/download-video
+app.get('/api/download-video', async (req, res) => {
+  const targetUrlStr = req.query.url;
+  if (!targetUrlStr) {
+    return res.status(400).send('URL parameter required');
+  }
+
+  try {
+    const targetUrl = new URL(targetUrlStr);
+    const hostname = targetUrl.hostname.toLowerCase();
+
+    // Whitelist domains matching *.cdninstagram.com, *.fbcdn.net, *.threads.net, *.instagram.com
+    const isWhitelisted = hostname.endsWith('.cdninstagram.com') ||
+                          hostname.endsWith('.fbcdn.net') ||
+                          hostname.endsWith('.threads.net') ||
+                          hostname.endsWith('.instagram.com') ||
+                          hostname === 'threads.net' ||
+                          hostname === 'instagram.com';
+                          
+    if (!isWhitelisted) {
+      return res.status(403).send('Domain not whitelisted');
+    }
+
+    const videoRes = await fetch(targetUrlStr, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+
+    if (!videoRes.ok) {
+      return res.status(videoRes.status).send('Failed to fetch video');
+    }
+
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Content-Disposition', 'attachment; filename="threads-video.mp4"');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    const arrayBuffer = await videoRes.arrayBuffer();
+    res.send(Buffer.from(arrayBuffer));
+  } catch (err) {
+    res.status(400).send('Invalid URL');
+  }
+});
+
+
+
 // Dynamic Open Graph handler for shared profile links
 function handleDynamicIndex(req, res, next) {
   const username = req.query.u ? req.query.u.trim() : null;
@@ -737,6 +888,15 @@ function handleDynamicIndex(req, res, next) {
       .replace(/<meta name="twitter:title" content=".*?"/i, `<meta name="twitter:title" content="${shareTitle}"`)
       .replace(/<meta name="twitter:description" content=".*?"/i, `<meta name="twitter:description" content="${shareDesc}"`);
 
+    // Check if uploaded passport image exists on disk and dynamic replace OG Image
+    const imagePath = path.join(uploadsDir, `${clean}.png`);
+    if (fs.existsSync(imagePath)) {
+      const ogImageUrl = `https://threadspassport.fun/uploads/${clean}.png`;
+      modifiedHtml = modifiedHtml
+        .replace(/<meta property="og:image" content=".*?"/i, `<meta property="og:image" content="${ogImageUrl}"`)
+        .replace(/<meta name="twitter:image" content=".*?"/i, `<meta name="twitter:image" content="${ogImageUrl}"`);
+    }
+
     res.send(modifiedHtml);
   });
 }
@@ -744,8 +904,15 @@ function handleDynamicIndex(req, res, next) {
 app.get('/', handleDynamicIndex);
 app.get('/lang/:lang/', handleDynamicIndex);
 
-// Serve frontend static files
-app.use(express.static(publicDir));
+// Serve frontend static files with long-term caching (except HTML)
+app.use(express.static(publicDir, {
+  maxAge: 31536000000,
+  setHeaders: (res, filepath) => {
+    if (filepath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+    }
+  }
+}));
 
 // Fallback all non-API routes to index.html for SPA behavior
 app.get('*', (req, res) => {

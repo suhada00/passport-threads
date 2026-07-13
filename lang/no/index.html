@@ -82,20 +82,24 @@
   <!-- FAVICON -->
   <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
 
-  <!-- FONTS -->
+  <!-- PRECONNECTIONS -->
+  <link rel="preconnect" href="https://ipapi.co">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+
+  <!-- FONTS (ASYNC FOR PERFORMANCE) -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet"></noscript>
 
   <!-- STYLES -->
   <link rel="stylesheet" href="/assets/css/main.css">
-  <link rel="stylesheet" href="/assets/css/passport.css">
-  <link rel="stylesheet" href="/assets/css/loading.css">
   <link rel="stylesheet" href="/assets/css/mobile.css">
-  <link rel="stylesheet" href="/assets/css/adsense.css">
+  <link rel="stylesheet" href="/assets/css/passport.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="/assets/css/loading.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="/assets/css/adsense.css" media="print" onload="this.media='all'">
 
   <!-- ADSENSE -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  <script data-src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" class="adsense-lazy" crossorigin="anonymous"></script>
 </head>
 
 <body class="state-idle">
@@ -434,12 +438,12 @@
         <button class="share-opt" data-platform="twitter">
           <span class="share-opt-icon" aria-hidden="true">𝕏</span>
           <span class="share-opt-name">Twitter / X</span>
-          <span class="share-opt-dim">1200×630</span>
+          <span class="share-opt-dim">1080×1350</span>
         </button>
         <button class="share-opt" data-platform="instagram">
           <span class="share-opt-icon" aria-hidden="true">📸</span>
           <span class="share-opt-name">Instagram</span>
-          <span class="share-opt-dim">1080×1080</span>
+          <span class="share-opt-dim">1080×1350</span>
         </button>
         <button class="share-opt" data-platform="threads">
           <span class="share-opt-icon" aria-hidden="true">🧵</span>
@@ -545,10 +549,10 @@
   <script src="/assets/js/preview.js?v=1.0.1"         defer></script>
   <script src="/assets/js/manual-mode.js?v=1.0.1"     defer></script>
   <script src="/assets/js/passport-render.js?v=1.0.1" defer></script>
-  <script src="/assets/js/passport-canvas.js?v=1.0.1" defer></script>
-  <script src="/assets/js/share.js?v=1.0.1"           defer></script>
+  <script src="/assets/js/passport-canvas.js?v=1.0.3" defer></script>
+  <script src="/assets/js/share.js?v=1.0.3"           defer></script>
   <script src="/assets/js/adsense.js?v=1.0.1"         defer></script>
-  <script src="/assets/js/app.js?v=1.0.1"             defer></script>
+  <script src="/assets/js/app.js?v=1.0.3"             defer></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
